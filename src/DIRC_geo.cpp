@@ -65,14 +65,10 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   glue_vol.setVisAttributes(desc.visAttributes(xml_glue.visStr()));
 
   // Envelope for bars
-  //Box Envelope_box("Envelope_box", (bar_height + 1*mm)/2, (bar_width + 1*mm)/2, (bar_length + 1*mm)/2);
   Box Envelope_box("Envelope_box", (bar_height + 1*mm)/2, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness + 1*mm));
   Volume Envelope_vol("Envelope_vol", Envelope_box, desc.material("AirOptical"));
-  //Volume       motherVol = desc.pickMotherVolume(det);
-  //PlacedVolume EnvelopePV     = motherVol.placeVolume(Envelope_vol, det_tr);
   dirc_module.placeVolume(Envelope_vol, Position(0,0,0));
-  //det.setPlacement(EnvelopePV);
-  
+
   // Place bars + glue into module assembly
   // FIXME place bars + glue into separate box volume
   auto bar_repeat_y    = xml_bar.attr<int>(_Unicode(repeat_y));
