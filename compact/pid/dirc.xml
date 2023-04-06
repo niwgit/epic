@@ -94,14 +94,14 @@
   <display>
     <vis name="DIRCTube"   ref="AnlTeal" alpha="0.1" visible="true"  showDaughters="true"   lineStyle="solid" drawingStyle="solid" />
     <vis name="DIRCBox"    ref="AnlLight_Gray" alpha="0.1" visible="true"  showDaughters="true"   lineStyle="solid" drawingStyle="solid" />
-    <vis name="DIRCLens1"  ref="AnlTeal" visible="true"  showDaughters="false"  lineStyle="solid" drawingStyle="solid" />
-    <vis name="DIRCLens2"  ref="AnlProcess_Blue" visible="true"  showDaughters="false"  lineStyle="solid" drawingStyle="solid" />
-    <vis name="DIRCLens3"  ref="AnlTeal" visible="true"  showDaughters="false"  lineStyle="solid" drawingStyle="solid" />
-    <vis name="DIRCBar"    ref="AnlTeal" visible="true"  showDaughters="false"  lineStyle="solid" drawingStyle="solid" />
-    <vis name="DIRCGlue"   ref="AnlViolet" visible="true"  showDaughters="false"  lineStyle="solid" drawingStyle="solid" />
-    <vis name="DIRCMirror" ref="AnlGray" visible="true"  showDaughters="false"  lineStyle="solid" drawingStyle="solid" />
-    <vis name="DIRCPrism"  ref="AnlTeal" visible="true"  showDaughters="false"  lineStyle="solid" drawingStyle="solid" />
-    <vis name="DIRCMCP"    ref="AnlRed" visible="true"  showDaughters="false" />
+    <vis name="DIRCLens1"  ref="AnlTeal" visible="true"  showDaughters="true"  lineStyle="solid" drawingStyle="solid" />
+    <vis name="DIRCLens2"  ref="AnlProcess_Blue" visible="true"  showDaughters="true"  lineStyle="solid" drawingStyle="solid" />
+    <vis name="DIRCLens3"  ref="AnlTeal" visible="true"  showDaughters="true"  lineStyle="solid" drawingStyle="solid" />
+    <vis name="DIRCBar"    ref="AnlTeal" visible="true"  showDaughters="true"  lineStyle="solid" drawingStyle="solid" />
+    <vis name="DIRCGlue"   ref="AnlViolet" visible="true"  showDaughters="true"  lineStyle="solid" drawingStyle="solid" />
+    <vis name="DIRCMirror" ref="AnlGray" visible="true"  showDaughters="true"  lineStyle="solid" drawingStyle="solid" />
+    <vis name="DIRCPrism"  ref="AnlTeal" visible="true"  showDaughters="true"  lineStyle="solid" drawingStyle="solid" />
+    <vis name="DIRCMCP"    ref="AnlRed" visible="true"  showDaughters="true" />
   </display>
 
   <detectors>

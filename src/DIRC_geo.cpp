@@ -65,7 +65,8 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   glue_vol.setVisAttributes(desc.visAttributes(xml_glue.visStr()));
 
   // Envelope for bars
-  Box Envelope_box("Envelope_box", (bar_height + 1*mm)/2, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness + 1*mm));
+  //Box Envelope_box("Envelope_box", (bar_height + 1*mm)/2, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness + 1*mm));
+  Box Envelope_box("Envelope_box", 500*mm, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness) + 550*mm);
   Volume Envelope_vol("Envelope_vol", Envelope_box, desc.material("AirOptical"));
   dirc_module.placeVolume(Envelope_vol, Position(0,0,0));
 
@@ -103,7 +104,8 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   skin.isValid();
 
   // Place mirror
-  dirc_module.placeVolume(mirror_vol, Position(0, 0, 0.5 * (bar_assm_length + mirror_thickness)));
+  //dirc_module.placeVolume(mirror_vol, Position(0, 0, 0.5 * (bar_assm_length + mirror_thickness)));
+  Envelope_vol.placeVolume(mirror_vol, Position(0, 0, 0.5 * (bar_assm_length + mirror_thickness)));
 
   // Prism variables
   xml_comp_t xml_prism        = xml_module.child(_Unicode(prism));
@@ -171,9 +173,12 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
       double lens_position_y = y_index*lens_width - 0.5*(prism_width - lens_width);
 
       Position lens_position(lens_position_x, lens_position_y, lens_position_z);
-      dirc_module.placeVolume(lens_layer1_vol, lens_position);
-      dirc_module.placeVolume(lens_layer2_vol, lens_position);
-      dirc_module.placeVolume(lens_layer3_vol, lens_position);
+      //dirc_module.placeVolume(lens_layer1_vol, lens_position);
+      //dirc_module.placeVolume(lens_layer2_vol, lens_position);
+      //dirc_module.placeVolume(lens_layer3_vol, lens_position);
+      Envelope_vol.placeVolume(lens_layer1_vol, lens_position);
+      Envelope_vol.placeVolume(lens_layer2_vol, lens_position);
+      Envelope_vol.placeVolume(lens_layer3_vol, lens_position);
     }
             
   // Prism construction
@@ -185,7 +190,8 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   double    prism_position_z = -0.5 * (bar_assm_length + prism_length) - lens_thickness;
   RotationX prism_rotation(M_PI / 2.);
   Position  prism_position(prism_position_x, 0, prism_position_z);
-  dirc_module.placeVolume(prism_vol, Transform3D(prism_rotation, prism_position));
+  //dirc_module.placeVolume(prism_vol, Transform3D(prism_rotation, prism_position));
+  Envelope_vol.placeVolume(prism_vol, Transform3D(prism_rotation, prism_position));
 
   // MCP variables
   xml_comp_t xml_mcp       = xml_module.child(_Unicode(mcp));
@@ -201,7 +207,8 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   double   mcp_position_x = 0.5 * prism_long_edge - 0.5 * prism_short_edge + lens_shift;
   double   mcp_position_z = -0.5 * bar_assm_length - lens_thickness - prism_length - 0.5 * mcp_thickness;
   Position mcp_position(mcp_position_x, 0, mcp_position_z);
-  dirc_module.placeVolume(mcp_vol, mcp_position);
+  //dirc_module.placeVolume(mcp_vol, mcp_position);
+  Envelope_vol.placeVolume(mcp_vol, mcp_position);
 
   // Place modules
   const int    module_repeat = xml_module.repeat();
