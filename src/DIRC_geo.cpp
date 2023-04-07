@@ -64,12 +64,7 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   Volume     glue_vol("glue_vol", glue_box, desc.material(xml_glue.materialStr()));
   glue_vol.setVisAttributes(desc.visAttributes(xml_glue.visStr()));
 
-  // Envelope for bars
-  //Box Envelope_box("Envelope_box", (bar_height + 1*mm)/2, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness + 1*mm));
-  Box Envelope_box("Envelope_box", 500*mm, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness) + 550*mm);
-  Volume Envelope_vol("Envelope_vol", Envelope_box, desc.material("AirOptical"));
-  dirc_module.placeVolume(Envelope_vol, Position(0,0,0));
-
+  
   // Place bars + glue into module assembly
   // FIXME place bars + glue into separate box volume
   auto bar_repeat_y    = xml_bar.attr<int>(_Unicode(repeat_y));
@@ -77,6 +72,51 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   auto bar_gap         = xml_bar.gap();
   auto bar_assm_width  = (bar_width + bar_gap) * bar_repeat_y - bar_gap;
   auto bar_assm_length = (bar_length + glue_thickness) * bar_repeat_z;
+
+  // Envelope for bars
+  Box Envelope_box("Envelope_box", (bar_height + 1*mm)/2, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness + 1*mm));
+  //Box Envelope_box("Envelope_box", 500*mm, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness) + 550*mm);
+  //Volume Envelope_box_vol("Envelope_box_vol", Envelope_box, desc.material("AirOptical"));
+
+  // Prism variables
+  xml_comp_t xml_prism        = xml_module.child(_Unicode(prism));
+  double     prism_angle      = xml_prism.angle();
+  double     prism_width      = xml_prism.width();
+  double     prism_length     = xml_prism.length();
+  double     prism_short_edge = getAttrOrDefault(xml_prism, _Unicode(short_edge), 50 * mm);
+  double     prism_long_edge  = prism_short_edge + prism_length * tan(prism_angle);
+
+  // Lens variables
+  xml_comp_t xml_lens    = xml_module.child(_Unicode(lens));
+  //double     lens_height = getAttrOrDefault(xml_lens, _Unicode(height), 50 * mm);
+  double     lens_shift  = getAttrOrDefault(xml_lens, _Unicode(shift), 0 * mm);
+  double lens_width = getAttrOrDefault(xml_lens, _Unicode(width), 35 * mm);
+  double lens_thickness = getAttrOrDefault(xml_lens, _Unicode(thickness), 12 * mm);
+  double lens_r1        = getAttrOrDefault(xml_lens, _Unicode(r1), 62 * mm);
+  double lens_r2        = getAttrOrDefault(xml_lens, _Unicode(r2), 36 * mm);
+
+  
+  // Prism construction
+  Trap   prism_trap = MakeTrap("prism_trap", prism_width, prism_length, prism_long_edge, prism_short_edge);
+  Volume prism_vol("prism_vol", prism_trap, desc.material(xml_prism.materialStr()));
+  prism_vol.setVisAttributes(desc.visAttributes(xml_prism.visStr()));
+
+  double    prism_position_x = (prism_long_edge + prism_short_edge) / 4. - 0.5 * prism_short_edge + lens_shift;;
+  double    prism_position_z = -0.5 * (bar_assm_length + prism_length) - lens_thickness;
+  RotationX prism_rotation(M_PI / 2.);
+  Position  prism_position(prism_position_x, 0, prism_position_z);
+  //dirc_module.placeVolume(prism_vol, Transform3D(prism_rotation, prism_position));
+  
+  
+  // Envelope for lens+prism
+  Trap Envelope_trap = MakeTrap("Envelope_trap", prism_width + 1*mm, prism_length + 1*mm, prism_long_edge + 1*mm, prism_short_edge + 1*mm);
+  
+  UnionSolid Envelope_union("Envelope_union", Envelope_box, Envelope_trap, Transform3D(prism_rotation, prism_position));
+  Volume Envelope_vol("Envelope_vol", Envelope_union, desc.material("AirOptical"));
+
+  dirc_module.placeVolume(Envelope_vol, Position(0,0,0));
+  Envelope_vol.placeVolume(prism_vol, Transform3D(prism_rotation, prism_position));
+  
   for (int y_index = 0; y_index < bar_repeat_y; y_index++) {
     double y = 0.5 * bar_assm_width - 0.5 * bar_width - (bar_width + bar_gap) * y_index;
     for (int z_index = 0; z_index < bar_repeat_z; z_index++) {
@@ -107,22 +147,6 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   //dirc_module.placeVolume(mirror_vol, Position(0, 0, 0.5 * (bar_assm_length + mirror_thickness)));
   Envelope_vol.placeVolume(mirror_vol, Position(0, 0, 0.5 * (bar_assm_length + mirror_thickness)));
 
-  // Prism variables
-  xml_comp_t xml_prism        = xml_module.child(_Unicode(prism));
-  double     prism_angle      = xml_prism.angle();
-  double     prism_width      = xml_prism.width();
-  double     prism_length     = xml_prism.length();
-  double     prism_short_edge = getAttrOrDefault(xml_prism, _Unicode(short_edge), 50 * mm);
-  double     prism_long_edge  = prism_short_edge + prism_length * tan(prism_angle);
-
-  // Lens variables
-  xml_comp_t xml_lens    = xml_module.child(_Unicode(lens));
-  //double     lens_height = getAttrOrDefault(xml_lens, _Unicode(height), 50 * mm);
-  double     lens_shift  = getAttrOrDefault(xml_lens, _Unicode(shift), 0 * mm);
-  double lens_width = getAttrOrDefault(xml_lens, _Unicode(width), 35 * mm);
-  double lens_thickness = getAttrOrDefault(xml_lens, _Unicode(thickness), 12 * mm);
-  double lens_r1        = getAttrOrDefault(xml_lens, _Unicode(r1), 62 * mm);
-  double lens_r2        = getAttrOrDefault(xml_lens, _Unicode(r2), 36 * mm);
 
   // Lens construction
   // FIXME avoid negative impact of booleans by putting lens inside box
@@ -181,18 +205,7 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
       Envelope_vol.placeVolume(lens_layer3_vol, lens_position);
     }
             
-  // Prism construction
-  Trap   prism_trap = MakeTrap("prism_trap", prism_width, prism_length, prism_long_edge, prism_short_edge);
-  Volume prism_vol("prism_vol", prism_trap, desc.material(xml_prism.materialStr()));
-  prism_vol.setVisAttributes(desc.visAttributes(xml_prism.visStr()));
-
-  double    prism_position_x = (prism_long_edge + prism_short_edge) / 4. - 0.5 * prism_short_edge + lens_shift;
-  double    prism_position_z = -0.5 * (bar_assm_length + prism_length) - lens_thickness;
-  RotationX prism_rotation(M_PI / 2.);
-  Position  prism_position(prism_position_x, 0, prism_position_z);
-  //dirc_module.placeVolume(prism_vol, Transform3D(prism_rotation, prism_position));
-  Envelope_vol.placeVolume(prism_vol, Transform3D(prism_rotation, prism_position));
-
+  
   // MCP variables
   xml_comp_t xml_mcp       = xml_module.child(_Unicode(mcp));
   double     mcp_thickness = xml_mcp.thickness();
