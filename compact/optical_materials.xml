@@ -10,37 +10,37 @@
     <matrix name="RINDEX__AirOptical" coldim="2" values="
       1.90745*eV  1.0
       1.93725*eV  1.0
-      1.968*eV  1.0
+      1.968*eV    1.0
       1.99974*eV  1.0
       2.03253*eV  1.0
-      2.0664*eV  1.0
+      2.0664*eV   1.0
       2.10143*eV  1.0
       2.13766*eV  1.0
       2.17516*eV  1.0
-      2.214*eV  1.0
+      2.214*eV    1.0
       2.25426*eV  1.0
-      2.296*eV  1.0
+      2.296*eV    1.0
       2.33932*eV  1.0
       2.38431*eV  1.0
       2.43106*eV  1.0
       2.47968*eV  1.0
       2.53029*eV  1.0
-      2.583*eV  1.0
+      2.583*eV    1.0
       2.63796*eV  1.0
       2.69531*eV  1.0
-      2.7552*eV  1.0
+      2.7552*eV   1.0
       2.81782*eV  1.0
       2.88335*eV  1.0
-      2.952*eV  1.0
-      3.024*eV  1.0
-      3.0996*eV  1.0
+      2.952*eV    1.0
+      3.024*eV    1.0
+      3.0996*eV   1.0
       3.17908*eV  1.0
       3.26274*eV  1.0
       3.35092*eV  1.0
       3.44401*eV  1.0
       3.54241*eV  1.0
       3.64659*eV  1.0
-      3.7571*eV  1.0
+      3.7571*eV   1.0
       3.87451*eV  1.0
       3.99949*eV  1.0
       4.13281*eV  1.0						     
@@ -48,37 +48,37 @@
     <matrix name="ABSLENGTH__AirOptical" coldim="2" values="
       1.90745*eV  4.0*cm
       1.93725*eV  4.0*cm
-      1.968*eV  4.0*cm
+      1.968*eV    4.0*cm
       1.99974*eV  4.0*cm
       2.03253*eV  4.0*cm
-      2.0664*eV  4.0*cm
+      2.0664*eV   4.0*cm
       2.10143*eV  4.0*cm
       2.13766*eV  4.0*cm
       2.17516*eV  4.0*cm
-      2.214*eV  4.0*cm
+      2.214*eV    4.0*cm
       2.25426*eV  4.0*cm
-      2.296*eV  4.0*cm
+      2.296*eV    4.0*cm
       2.33932*eV  4.0*cm
       2.38431*eV  4.0*cm
       2.43106*eV  4.0*cm
       2.47968*eV  4.0*cm
       2.53029*eV  4.0*cm
-      2.583*eV  4.0*cm
+      2.583*eV    4.0*cm
       2.63796*eV  4.0*cm
       2.69531*eV  4.0*cm
-      2.7552*eV  4.0*cm
+      2.7552*eV   4.0*cm
       2.81782*eV  4.0*cm
       2.88335*eV  4.0*cm
-      2.952*eV  4.0*cm
-      3.024*eV  4.0*cm
-      3.0996*eV  4.0*cm
+      2.952*eV    4.0*cm
+      3.024*eV    4.0*cm
+      3.0996*eV   4.0*cm
       3.17908*eV  4.0*cm
       3.26274*eV  4.0*cm
       3.35092*eV  4.0*cm
       3.44401*eV  4.0*cm
       3.54241*eV  4.0*cm
       3.64659*eV  4.0*cm
-      3.7571*eV  4.0*cm
+      3.7571*eV   4.0*cm
       3.87451*eV  4.0*cm
       3.99949*eV  4.0*cm
       4.13281*eV  4.0*cm							
@@ -478,6 +478,21 @@
       6.00407*eV   1.89988
       6.1992*eV    1.9127							   
       "/>
+
+    <comment>
+    Absorption length is caculated using transmittance values for 2 mm thickness (crystan standard UV grade) from
+    https://www.crystran.co.uk/optical-materials/sapphire-al2o3
+
+    F = ((n - 1) * (n - 1)) / ((n + 1) * (n + 1))
+
+    Absorption length = (-1 / ln(transmittance + 2*F)) * 2 mm
+
+    where:
+          F - Fresnel reflection coefficient
+          n - Refractive index of Sapphire
+
+    </comment>
+    
     <matrix name="ABSLENGTH__DIRCSapphire" coldim="2" values="
       1.02212*eV   350.051*mm
       1.05518*eV   306.241*mm
@@ -1004,8 +1019,8 @@
         Nlak33aMaterial->AddElement(O, natoms = 2);
       -->
     </material>
-    <material name="SapphireOptical">
-      <D type="density" value="4.220" unit="g/cm3"/>
+    <material name="Sapphire">
+      <D type="density" value="3.98" unit="g/cm3"/>
       <composite n="2" ref="Al"/>
       <composite n="3" ref="O"/>
       <property name="RINDEX" ref="RINDEX__DIRCSapphire"/>

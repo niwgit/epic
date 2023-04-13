@@ -73,8 +73,17 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   auto bar_assm_width  = (bar_width + bar_gap) * bar_repeat_y - bar_gap;
   auto bar_assm_length = (bar_length + glue_thickness) * bar_repeat_z;
 
-  // Envelope for bars
-  Box Envelope_box("Envelope_box", (bar_height + 1*mm)/2, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness + 1*mm));
+  // Mirror construction
+  xml_comp_t xml_mirror       = xml_module.child(_Unicode(mirror));
+  auto       mirror_width     = xml_mirror.width();
+  auto       mirror_height    = xml_mirror.height();
+  auto       mirror_thickness = xml_mirror.thickness();
+  Box        mirror_box("mirror_box", mirror_height / 2, mirror_width / 2, mirror_thickness / 2);
+  Volume     mirror_vol("mirror_vol", mirror_box, desc.material(xml_mirror.materialStr()));
+  mirror_vol.setVisAttributes(desc.visAttributes(xml_mirror.visStr()));
+
+    // Envelope for bars + mirror
+  Box Envelope_box("Envelope_box", (mirror_height + 1*mm)/2, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness + mirror_thickness));
   //Box Envelope_box("Envelope_box", 500*mm, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness) + 550*mm);
   //Volume Envelope_box_vol("Envelope_box_vol", Envelope_box, desc.material("AirOptical"));
 
@@ -88,7 +97,6 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
 
   // Lens variables
   xml_comp_t xml_lens    = xml_module.child(_Unicode(lens));
-  //double     lens_height = getAttrOrDefault(xml_lens, _Unicode(height), 50 * mm);
   double     lens_shift  = getAttrOrDefault(xml_lens, _Unicode(shift), 0 * mm);
   double lens_width = getAttrOrDefault(xml_lens, _Unicode(width), 35 * mm);
   double lens_thickness = getAttrOrDefault(xml_lens, _Unicode(thickness), 12 * mm);
@@ -109,9 +117,16 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   
   
   // Envelope for lens+prism
-  Trap Envelope_trap = MakeTrap("Envelope_trap", prism_width + 1*mm, prism_length + 1*mm, prism_long_edge + 1*mm, prism_short_edge + 1*mm);
   
-  UnionSolid Envelope_union("Envelope_union", Envelope_box, Envelope_trap, Transform3D(prism_rotation, prism_position));
+  double Envelope_trap_width = prism_width + 1*mm;
+  double Envelope_trap_length = prism_length + lens_thickness + 2*mm; // mcp thickness is 1 mm
+  double Envelope_trap_short_edge = prism_short_edge + 1*mm;
+  double Envelope_trap_long_edge = Envelope_trap_short_edge + Envelope_trap_length * tan(prism_angle);
+    
+  Trap Envelope_trap = MakeTrap("Envelope_trap", Envelope_trap_width, Envelope_trap_length, Envelope_trap_long_edge, Envelope_trap_short_edge);
+  Position Envelope_trap_position(prism_position_x, 0, prism_position_z + 0.5*lens_thickness - 1*mm);
+  
+  UnionSolid Envelope_union("Envelope_union", Envelope_box, Envelope_trap, Transform3D(prism_rotation, Envelope_trap_position));
   Volume Envelope_vol("Envelope_vol", Envelope_union, desc.material("AirOptical"));
 
   dirc_module.placeVolume(Envelope_vol, Position(0,0,0));
@@ -128,15 +143,7 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
     }
   }
 
-  // Mirror construction
-  xml_comp_t xml_mirror       = xml_module.child(_Unicode(mirror));
-  auto       mirror_width     = xml_mirror.width();
-  auto       mirror_height    = xml_mirror.height();
-  auto       mirror_thickness = xml_mirror.thickness();
-  Box        mirror_box("mirror_box", mirror_height / 2, mirror_width / 2, mirror_thickness / 2);
-  Volume     mirror_vol("mirror_vol", mirror_box, desc.material(xml_mirror.materialStr()));
-  mirror_vol.setVisAttributes(desc.visAttributes(xml_mirror.visStr()));
-
+  
   // Mirror optical surface
   auto        surfMgr = desc.surfaceManager();
   auto        surf    = surfMgr.opticalSurface("MirrorOpticalSurface");
@@ -161,14 +168,14 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   double ztrans1 = -lens_thickness / 2. - sqrt(lens_r1 * lens_r1 - cr2 * cr2) + lens_min_thickness;
   double ztrans2 = -lens_thickness / 2. - sqrt(lens_r2 * lens_r2 - cr2 * cr2) + lens_min_thickness * 2;  
 
-  Box gfbox("Fbox", 0.5 * prism_short_edge, 0.5 * lens_width, 0.5 * lens_thickness);
-  Tube gfstube("ftube", 0, cr2, 0.5 * lens_thickness, 0 * deg, 360 * deg);
+  Box gfbox("gfbox", 0.5 * prism_short_edge, 0.5 * lens_width, 0.5 * lens_thickness);
+  Tube gfstube("gfstube", 0, cr2, 0.5 * lens_thickness, 0 * deg, 360 * deg);
 
   Sphere gsphere1("Sphere1", 0, lens_r1, 0 * deg, 180 * deg, 0 * deg, 360 * deg);
   Sphere gsphere2("Sphere2", 0, lens_r2, 0 * deg, 180 * deg, 0 * deg, 360 * deg);
   
-  IntersectionSolid gbbox("bbox", gfbox, gfbox, Position(0, 0, -lens_min_thickness * 2));
-  IntersectionSolid gsbox("sbox", gfstube, gfbox, Position(0, 0, lens_min_thickness * 2));
+  IntersectionSolid gbbox("gbbox", gfbox, gfbox, Position(0, 0, -lens_min_thickness * 2));
+  IntersectionSolid gsbox("gsbox", gfstube, gfbox, Position(0, 0, lens_min_thickness * 2));
 
   UnionSolid gubox("unionbox", gbbox, gsbox);
 
