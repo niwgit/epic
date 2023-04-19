@@ -160,31 +160,29 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
 
   // 3-layer spherical lens ---
 
-  double thight = bar_height;
-  double cr2 = sqrt(lens_width * lens_width / 4. + thight * thight / 4.);
+  double lens_radius = sqrt(lens_width * lens_width / 4. + bar_height * bar_height / 4.);
 
   double lens_min_thickness = 2.0 * mm;
 
-  double ztrans1 = -lens_thickness / 2. - sqrt(lens_r1 * lens_r1 - cr2 * cr2) + lens_min_thickness;
-  double ztrans2 = -lens_thickness / 2. - sqrt(lens_r2 * lens_r2 - cr2 * cr2) + lens_min_thickness * 2;  
+  double ztrans1 = -lens_thickness / 2. - sqrt(lens_r1 * lens_r1 - lens_radius * lens_radius) + lens_min_thickness;
+  double ztrans2 = -lens_thickness / 2. - sqrt(lens_r2 * lens_r2 - lens_radius * lens_radius) + lens_min_thickness * 2;
 
-  Box gfbox("gfbox", 0.5 * prism_short_edge, 0.5 * lens_width, 0.5 * lens_thickness);
-  Tube gfstube("gfstube", 0, cr2, 0.5 * lens_thickness, 0 * deg, 360 * deg);
+  Box  lens_symm_box("lens_symm_box", 0.5 * prism_short_edge, 0.5 * lens_width, 0.5 * lens_thickness);
+  Tube lens_symm_tube(0, lens_radius, 0.5 * lens_thickness);
 
-  Sphere gsphere1("Sphere1", 0, lens_r1, 0 * deg, 180 * deg, 0 * deg, 360 * deg);
-  Sphere gsphere2("Sphere2", 0, lens_r2, 0 * deg, 180 * deg, 0 * deg, 360 * deg);
-  
-  IntersectionSolid gbbox("gbbox", gfbox, gfbox, Position(0, 0, -lens_min_thickness * 2));
-  IntersectionSolid gsbox("gsbox", gfstube, gfbox, Position(0, 0, lens_min_thickness * 2));
+  Sphere lens_sphere1(0, lens_r1);
+  Sphere lens_sphere2(0, lens_r2);
 
-  UnionSolid gubox("unionbox", gbbox, gsbox);
+  IntersectionSolid lens_box("lens_box", lens_symm_box, lens_symm_box, Position(0, 0, -lens_min_thickness * 2));
+  IntersectionSolid lens_tube("lens_tube", lens_symm_tube, lens_symm_box, Position(0, 0, lens_min_thickness * 2));
+  UnionSolid        lens_box_tube("lens_box_tube", lens_box, lens_tube);
 
-  IntersectionSolid lens_layer1_solid("lens_layer1_solid", gubox, gsphere1, Position(0, 0, -ztrans1));
-  SubtractionSolid  gLenst("temp", gubox, gsphere1, Position(0, 0, -ztrans1));
+  IntersectionSolid lens_layer1_solid("lens_layer1_solid", lens_box_tube, lens_sphere1, Position(0, 0, -ztrans1));
+  SubtractionSolid  lens_layer23_solid("lens_layer23_solid", lens_box_tube, lens_sphere1, Position(0, 0, -ztrans1));
 
-  IntersectionSolid lens_layer2_solid("lens_layer2_solid", gLenst, gsphere2, Position(0, 0, -ztrans2));
-  SubtractionSolid  lens_layer3_solid("lens_layer3_solid", gLenst, gsphere2, Position(0, 0, -ztrans2));
-  
+  IntersectionSolid lens_layer2_solid("lens_layer2_solid", lens_layer23_solid, lens_sphere2, Position(0, 0, -ztrans2));
+  SubtractionSolid  lens_layer3_solid("lens_layer3_solid", lens_layer23_solid, lens_sphere2, Position(0, 0, -ztrans2));
+
   Volume lens_layer1_vol("lens_layer1_vol", lens_layer1_solid,
                          desc.material(xml_lens.attr<std::string>(_Unicode(material1))));
   Volume lens_layer2_vol("lens_layer2_vol", lens_layer2_solid,
@@ -195,7 +193,7 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   lens_layer1_vol.setVisAttributes(desc.visAttributes(xml_lens.attr<std::string>(_Unicode(vis1))));
   lens_layer2_vol.setVisAttributes(desc.visAttributes(xml_lens.attr<std::string>(_Unicode(vis2))));
   lens_layer3_vol.setVisAttributes(desc.visAttributes(xml_lens.attr<std::string>(_Unicode(vis3))));
-
+  
   double   lens_position_x = lens_shift;
   double   lens_position_z = -0.5 * (bar_assm_length + lens_thickness);
   
