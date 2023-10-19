@@ -66,7 +66,8 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
 
   // Envelope for bars
   //Box Envelope_box("Envelope_box", (bar_height + 1*mm)/2, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness + 1*mm));
-  Box Envelope_box("Envelope_box", 500*mm, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness) + 550*mm);
+  //Box Envelope_box("Envelope_box", 500*mm, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness) + 550*mm);
+  Box Envelope_box("Envelope_box", 230*mm, 180*mm, 2*(bar_length + glue_thickness) + 550*mm);
   Volume Envelope_vol("Envelope_vol", Envelope_box, desc.material("AirOptical"));
   dirc_module.placeVolume(Envelope_vol, Position(0,0,0));
 
@@ -97,15 +98,15 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   Volume     mirror_vol("mirror_vol", mirror_box, desc.material(xml_mirror.materialStr()));
   mirror_vol.setVisAttributes(desc.visAttributes(xml_mirror.visStr()));
 
-  // Mirror optical surface
-  auto        surfMgr = desc.surfaceManager();
-  auto        surf    = surfMgr.opticalSurface("MirrorOpticalSurface");
-  SkinSurface skin(desc, det, Form("dirc_mirror_optical_surface"), surf, mirror_vol);
-  skin.isValid();
-
   // Place mirror
   //dirc_module.placeVolume(mirror_vol, Position(0, 0, 0.5 * (bar_assm_length + mirror_thickness)));
   Envelope_vol.placeVolume(mirror_vol, Position(0, 0, 0.5 * (bar_assm_length + mirror_thickness)));
+
+  // Mirror optical surface
+  auto        surfMgr = desc.surfaceManager();
+  auto        surf    = surfMgr.opticalSurface("DIRC_MirrorOpticalSurface");
+  SkinSurface skin(desc, det, Form("dirc_mirror_optical_surface"), surf, mirror_vol);
+  skin.isValid();
 
   // Prism variables
   xml_comp_t xml_prism        = xml_module.child(_Unicode(prism));
@@ -210,6 +211,11 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   //dirc_module.placeVolume(mcp_vol, mcp_position);
   Envelope_vol.placeVolume(mcp_vol, mcp_position);
 
+  // MCP optical surface                                                                                                                  
+  auto        surf_sensor    = surfMgr.opticalSurface("SensorSurface_DIRC");
+  SkinSurface skin_sensor(desc, det, Form("dirc_sensor_optical_surface"), surf_sensor, mcp_vol);
+  skin_sensor.isValid();
+  
   // Place modules
   const int    module_repeat = xml_module.repeat();
   const double dphi          = 2. * M_PI / module_repeat;
