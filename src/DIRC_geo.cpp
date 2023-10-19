@@ -64,6 +64,7 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   Volume     glue_vol("glue_vol", glue_box, desc.material(xml_glue.materialStr()));
   glue_vol.setVisAttributes(desc.visAttributes(xml_glue.visStr()));
 
+
   // Envelope for bars
   //Box Envelope_box("Envelope_box", (bar_height + 1*mm)/2, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness + 1*mm));
   //Box Envelope_box("Envelope_box", 500*mm, 5*(bar_width + 0.15*mm), 2*(bar_length + glue_thickness) + 550*mm);
@@ -73,11 +74,14 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
 
   // Place bars + glue into module assembly
   // FIXME place bars + glue into separate box volume
+
+
   auto bar_repeat_y    = xml_bar.attr<int>(_Unicode(repeat_y));
   auto bar_repeat_z    = xml_bar.attr<int>(_Unicode(repeat_z));
   auto bar_gap         = xml_bar.gap();
   auto bar_assm_width  = (bar_width + bar_gap) * bar_repeat_y - bar_gap;
   auto bar_assm_length = (bar_length + glue_thickness) * bar_repeat_z;
+
   for (int y_index = 0; y_index < bar_repeat_y; y_index++) {
     double y = 0.5 * bar_assm_width - 0.5 * bar_width - (bar_width + bar_gap) * y_index;
     for (int z_index = 0; z_index < bar_repeat_z; z_index++) {
@@ -88,6 +92,7 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
       Envelope_vol.placeVolume(bar_vol, Position(0, y, z)).addPhysVolID("section", z_index).addPhysVolID("bar", y_index);
     }
   }
+
 
   // Mirror construction
   xml_comp_t xml_mirror       = xml_module.child(_Unicode(mirror));
@@ -118,7 +123,6 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
 
   // Lens variables
   xml_comp_t xml_lens    = xml_module.child(_Unicode(lens));
-  //double     lens_height = getAttrOrDefault(xml_lens, _Unicode(height), 50 * mm);
   double     lens_shift  = getAttrOrDefault(xml_lens, _Unicode(shift), 0 * mm);
   double lens_width = getAttrOrDefault(xml_lens, _Unicode(width), 35 * mm);
   double lens_thickness = getAttrOrDefault(xml_lens, _Unicode(thickness), 12 * mm);
@@ -126,34 +130,32 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   double lens_r2        = getAttrOrDefault(xml_lens, _Unicode(r2), 36 * mm);
 
   // Lens construction
-  // FIXME avoid negative impact of booleans by putting lens inside box
-
   // 3-layer spherical lens ---
 
-  double thight = bar_height;
-  double cr2 = sqrt(lens_width * lens_width / 4. + thight * thight / 4.);
+  double lens_radius = sqrt(lens_width * lens_width / 4. + bar_height * bar_height / 4.);
 
   double lens_min_thickness = 2.0 * mm;
 
-  double ztrans1 = -lens_thickness / 2. - sqrt(lens_r1 * lens_r1 - cr2 * cr2) + lens_min_thickness;
-  double ztrans2 = -lens_thickness / 2. - sqrt(lens_r2 * lens_r2 - cr2 * cr2) + lens_min_thickness * 2;  
+  double ztrans1 = -lens_thickness / 2. - sqrt(lens_r1 * lens_r1 - lens_radius * lens_radius) + lens_min_thickness;
+  double ztrans2 = -lens_thickness / 2. - sqrt(lens_r2 * lens_r2 - lens_radius * lens_radius) + lens_min_thickness * 2;
 
-  Box gfbox("Fbox", 0.5 * prism_short_edge, 0.5 * lens_width, 0.5 * lens_thickness);
-  Tube gfstube("ftube", 0, cr2, 0.5 * lens_thickness, 0 * deg, 360 * deg);
+  Box  lens_symm_box("lens_symm_box", 0.5 * prism_short_edge, 0.5 * lens_width, 0.5 * lens_thickness);
+  Volume Envelope_lens_vol("Envelope_lens_vol", lens_symm_box, desc.material("AirOptical"));
 
-  Sphere gsphere1("Sphere1", 0, lens_r1, 0 * deg, 180 * deg, 0 * deg, 360 * deg);
-  Sphere gsphere2("Sphere2", 0, lens_r2, 0 * deg, 180 * deg, 0 * deg, 360 * deg);
-  
-  IntersectionSolid gbbox("bbox", gfbox, gfbox, Position(0, 0, -lens_min_thickness * 2));
-  IntersectionSolid gsbox("sbox", gfstube, gfbox, Position(0, 0, lens_min_thickness * 2));
+  Tube lens_symm_tube(0, lens_radius, 0.5 * lens_thickness);
 
-  UnionSolid gubox("unionbox", gbbox, gsbox);
+  Sphere lens_sphere1(0, lens_r1);
+  Sphere lens_sphere2(0, lens_r2);
 
-  IntersectionSolid lens_layer1_solid("lens_layer1_solid", gubox, gsphere1, Position(0, 0, -ztrans1));
-  SubtractionSolid  gLenst("temp", gubox, gsphere1, Position(0, 0, -ztrans1));
+  IntersectionSolid lens_box("lens_box", lens_symm_box, lens_symm_box, Position(0, 0, -lens_min_thickness * 2));
+  IntersectionSolid lens_tube("lens_tube", lens_symm_tube, lens_symm_box, Position(0, 0, lens_min_thickness * 2));
+  UnionSolid        lens_box_tube("lens_box_tube", lens_box, lens_tube);
 
-  IntersectionSolid lens_layer2_solid("lens_layer2_solid", gLenst, gsphere2, Position(0, 0, -ztrans2));
-  SubtractionSolid  lens_layer3_solid("lens_layer3_solid", gLenst, gsphere2, Position(0, 0, -ztrans2));
+  IntersectionSolid lens_layer1_solid("lens_layer1_solid", lens_box_tube, lens_sphere1, Position(0, 0, -ztrans1));
+  SubtractionSolid  lens_layer23_solid("lens_layer23_solid", lens_box_tube, lens_sphere1, Position(0, 0, -ztrans1));
+
+  IntersectionSolid lens_layer2_solid("lens_layer2_solid", lens_layer23_solid, lens_sphere2, Position(0, 0, -ztrans2));
+  SubtractionSolid  lens_layer3_solid("lens_layer3_solid", lens_layer23_solid, lens_sphere2, Position(0, 0, -ztrans2));
   
   Volume lens_layer1_vol("lens_layer1_vol", lens_layer1_solid,
                          desc.material(xml_lens.attr<std::string>(_Unicode(material1))));
@@ -168,15 +170,13 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
 
   double   lens_position_x = lens_shift;
   double   lens_position_z = -0.5 * (bar_assm_length + lens_thickness);
-  
+
   for(int y_index = 0; y_index < bar_repeat_y; y_index++)
     {
       double lens_position_y = y_index*lens_width - 0.5*(prism_width - lens_width);
 
       Position lens_position(lens_position_x, lens_position_y, lens_position_z);
-      //dirc_module.placeVolume(lens_layer1_vol, lens_position);
-      //dirc_module.placeVolume(lens_layer2_vol, lens_position);
-      //dirc_module.placeVolume(lens_layer3_vol, lens_position);
+
       Envelope_vol.placeVolume(lens_layer1_vol, lens_position);
       Envelope_vol.placeVolume(lens_layer2_vol, lens_position);
       Envelope_vol.placeVolume(lens_layer3_vol, lens_position);
@@ -191,6 +191,7 @@ static Ref_t createDetector(Detector& desc, xml_h e, SensitiveDetector sens)
   double    prism_position_z = -0.5 * (bar_assm_length + prism_length) - lens_thickness;
   RotationX prism_rotation(M_PI / 2.);
   Position  prism_position(prism_position_x, 0, prism_position_z);
+
   //dirc_module.placeVolume(prism_vol, Transform3D(prism_rotation, prism_position));
   Envelope_vol.placeVolume(prism_vol, Transform3D(prism_rotation, prism_position));
 

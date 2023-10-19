@@ -31,11 +31,16 @@ endif()
 # Export compile commands as json for run-clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Install to the top directory by default
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/prefix CACHE PATH "Install in $src/prefix/ directory by default" FORCE)
+endif()
+
 # Install into GNU standard directories
 include(GNUInstallDirs)
 
 # Dependencies
-find_package(DD4hep 1.21 REQUIRED COMPONENTS DDCore DDG4 DDRec)
+find_package(DD4hep 1.21 REQUIRED COMPONENTS DDCore DDRec)
 find_package(fmt REQUIRED)
 
 #-----------------------------------------------------------------------------------
@@ -109,4 +114,9 @@ execute_process(
 configure_file(templates/setup.sh.in ${CMAKE_CURRENT_BINARY_DIR}/setup.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup.sh
     DESTINATION ${CMAKE_INSTALL_PREFIX}
+)
+
+# install programs
+install(PROGRAMS bin/g4MaterialScan_to_csv
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
